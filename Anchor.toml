@@ -1,0 +1,21 @@
+[toolchain]
+package_manager = "yarn"
+
+[features]
+resolution = true
+skip-lint = false
+
+[programs.localnet]
+teleology = "YbHTUaJk2tQfX5VUY4iMv2bqd2oDHoS3MaerF6VKvgk"
+
+[programs.devnet]
+teleology = "YbHTUaJk2tQfX5VUY4iMv2bqd2oDHoS3MaerF6VKvgk"
+
+[provider]
+cluster = "devnet"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "cargo test"
+
+[hooks]
