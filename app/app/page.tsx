@@ -1,11 +1,31 @@
-'use client';
+"use client";
 import { useEffect, useState } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { Connection, PublicKey } from '@solana/web3.js';
 import * as anchor from '@coral-xyz/anchor';
-import { findUniverse, findGame, findBet } from '../lib/program';
-import { RPC_URL, UNIVERSE_NAME, UNIVERSE_AUTHORITY, VAULT_ADDRESS, TIMER_MINT, PROGRAM_ID } from '../lib/constants';
 import { IDL } from '../lib/idl';
+import { RPC_URL, TIMER_MINT, PROGRAM_ID } from '../lib/constants';
+
+const UNIVERSE_PDA = '87g4cgFaCopAufWwZ8ucyGsyJZCjLJLXrJ7a6q7j3kgq';
+const UNIVERSE_NAME = 'fsp-alpha';
+
+function findGamePda(universeKey: PublicKey, index: number): PublicKey {
+  const buf = Buffer.alloc(4);
+  buf.writeUInt32LE(index, 0);
+  const [pda] = PublicKey.findProgramAddressSync(
+    [Buffer.from('game'), universeKey.toBuffer(), buf],
+    new PublicKey(PROGRAM_ID)
+  );
+  return pda;
+}
+
+function findBetPda(gameKey: PublicKey, bettor: PublicKey): PublicKey {
+  const [pda] = PublicKey.findProgramAddressSync(
+    [Buffer.from('bet'), gameKey.toBuffer(), bettor.toBuffer()],
+    new PublicKey(PROGRAM_ID)
+  );
+  return pda;
+}
 
 export default function Home() {
   const { publicKey, wallet } = useWallet();
@@ -22,20 +42,19 @@ export default function Home() {
     setLoading(true);
     try {
       const conn = new Connection(RPC_URL, 'confirmed');
-      const authority = new PublicKey(UNIVERSE_AUTHORITY);
+      const universePda = new PublicKey(UNIVERSE_PDA);
       const dummyWallet = {
-        publicKey: authority,
+        publicKey: new PublicKey(UNIVERSE_PDA),
         signTransaction: async (tx: any) => tx,
         signAllTransactions: async (txs: any) => txs,
       };
       const provider = new anchor.AnchorProvider(conn, dummyWallet as any, {});
       const program = new anchor.Program(IDL as anchor.Idl, provider);
-      const [universePda] = findUniverse(authority, UNIVERSE_NAME);
       const u = await (program.account as any).universe.fetch(universePda);
       setUniverse(u);
       const loaded = [];
       for (let i = 0; i < u.gameCount; i++) {
-        const [gamePda] = findGame(universePda, i);
+        const gamePda = findGamePda(universePda, i);
         const g = await (program.account as any).game.fetch(gamePda);
         loaded.push({ game: g, pda: gamePda.toBase58() });
       }
@@ -53,14 +72,14 @@ export default function Home() {
     setBetResult(r => ({ ...r, [gamePda]: '' }));
     try {
       const anchorWallet = {
-      publicKey: publicKey!,
-      signTransaction: (wallet as any).adapter.signTransaction?.bind((wallet as any).adapter),
-      signAllTransactions: (wallet as any).adapter.signAllTransactions?.bind((wallet as any).adapter),
-    };
-    const provider = new anchor.AnchorProvider(connection, anchorWallet as any, { commitment: 'confirmed' });
+        publicKey,
+        signTransaction: (wallet as any).adapter.signTransaction?.bind((wallet as any).adapter),
+        signAllTransactions: (wallet as any).adapter.signAllTransactions?.bind((wallet as any).adapter),
+      };
+      const provider = new anchor.AnchorProvider(connection, anchorWallet as any, { commitment: 'confirmed' });
       const program = new anchor.Program(IDL as anchor.Idl, provider);
       const gamePubkey = new PublicKey(gamePda);
-      const [bet] = findBet(gamePubkey, publicKey);
+      const bet = findBetPda(gamePubkey, publicKey);
       const bettorTokenAccount = await anchor.utils.token.associatedAddress({
         mint: new PublicKey(TIMER_MINT),
         owner: publicKey,
@@ -81,7 +100,7 @@ export default function Home() {
       setBetResult(r => ({ ...r, [gamePda]: 'Bet placed!' }));
       await loadGames();
     } catch (e: any) {
-      setBetResult(r => ({ ...r, [gamePda]: 'Error: ' + (e.message || '').slice(0, 80) }));
+      setBetResult(r => ({ ...r, [gamePda]: 'Error: ' + (e.message || '').slice(0, 100) }));
     }
     setBetting(null);
   }
@@ -92,7 +111,6 @@ export default function Home() {
         <h1 className="text-4xl font-bold text-white mb-2">MekongDelta</h1>
         <p className="text-gray-400">Prediction markets inside FSP universes on Solana</p>
       </div>
-
       {universe && (
         <div className="grid grid-cols-4 gap-4 bg-gray-900 border border-gray-800 rounded-xl p-4">
           <div><div className="text-gray-500 text-xs mb-1">Universe</div><div className="text-white font-semibold">{UNIVERSE_NAME}</div></div>
@@ -101,16 +119,11 @@ export default function Home() {
           <div><div className="text-gray-500 text-xs mb-1">Games</div><div className="text-white font-semibold">{universe.gameCount}</div></div>
         </div>
       )}
-
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold text-white">Games</h2>
-        <button onClick={loadGames} className="text-sm text-gray-500 hover:text-white border border-gray-800 hover:border-gray-600 px-3 py-1 rounded-lg transition-colors">
-          Refresh
-        </button>
+        <button onClick={loadGames} className="text-sm text-gray-500 hover:text-white border border-gray-800 hover:border-gray-600 px-3 py-1 rounded-lg transition-colors">Refresh</button>
       </div>
-
       {loading && <div className="text-gray-500 text-center py-16">Loading from devnet...</div>}
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {games.map(({ game, pda }, i) => {
           const yes = Number(game.yesAmount) / 1e9;
@@ -122,67 +135,40 @@ export default function Home() {
           const eventId = Buffer.from(game.gameType?.customEvent?.eventId || []).toString('utf8').replace(/\0/g, '');
           const isBetting = betting?.startsWith(pda);
           const result = betResult[pda];
-
+          const vaultAddr = game.vault.toBase58();
           return (
             <div key={pda} className="bg-gray-900 border border-gray-800 rounded-xl p-5 flex flex-col gap-4 hover:border-gray-700 transition-colors">
               <div className="flex justify-between items-center">
                 <span className="text-gray-500 text-sm font-mono">Game #{i}</span>
-                <span className={`text-sm font-medium px-2 py-0.5 rounded-full bg-gray-800 ${isLocked ? 'text-yellow-400' : 'text-green-400'}`}>
-                  {isLocked ? 'Locked' : 'Open'}
-                </span>
+                <span className={`text-sm font-medium px-2 py-0.5 rounded-full bg-gray-800 ${isLocked ? 'text-yellow-400' : 'text-green-400'}`}>{isLocked ? 'Locked' : 'Open'}</span>
               </div>
-
               <div className="text-white font-semibold text-lg">{eventId || 'Custom Event'}</div>
               <div className="text-gray-500 text-xs">Locks: {lockTime.toLocaleString()}</div>
-
               <div className="flex flex-col gap-2">
                 <div className="flex justify-between text-xs text-gray-400">
                   <span>YES — {yesPct}% ({yes.toFixed(0)} TIMER)</span>
                   <span>NO — {100 - yesPct}% ({no.toFixed(0)} TIMER)</span>
                 </div>
                 <div className="w-full bg-gray-800 rounded-full h-2 overflow-hidden">
-                  <div className="bg-gradient-to-r from-green-500 to-green-400 h-2 rounded-full transition-all duration-500"
-                    style={{ width: yesPct + '%' }} />
+                  <div className="bg-gradient-to-r from-green-500 to-green-400 h-2 rounded-full transition-all duration-500" style={{ width: yesPct + '%' }} />
                 </div>
               </div>
-
-              {/* Bet buttons — show on open games only */}
               {!isLocked && publicKey && (
                 <div className="flex gap-2">
-                  <button
-                    onClick={() => placeBet(pda, VAULT_ADDRESS, 'yes')}
-                    disabled={!!betting}
-                    className="flex-1 bg-green-600 hover:bg-green-500 disabled:opacity-40 text-white py-2.5 rounded-lg text-sm font-semibold transition-colors"
-                  >
+                  <button onClick={() => placeBet(pda, vaultAddr, 'yes')} disabled={!!betting}
+                    className="flex-1 bg-green-600 hover:bg-green-500 disabled:opacity-40 text-white py-2.5 rounded-lg text-sm font-semibold transition-colors">
                     {isBetting && betting === pda + 'yes' ? 'Placing...' : 'YES — 100 TIMER'}
                   </button>
-                  <button
-                    onClick={() => placeBet(pda, VAULT_ADDRESS, 'no')}
-                    disabled={!!betting}
-                    className="flex-1 bg-red-600 hover:bg-red-500 disabled:opacity-40 text-white py-2.5 rounded-lg text-sm font-semibold transition-colors"
-                  >
+                  <button onClick={() => placeBet(pda, vaultAddr, 'no')} disabled={!!betting}
+                    className="flex-1 bg-red-600 hover:bg-red-500 disabled:opacity-40 text-white py-2.5 rounded-lg text-sm font-semibold transition-colors">
                     {isBetting && betting === pda + 'no' ? 'Placing...' : 'NO — 100 TIMER'}
                   </button>
                 </div>
               )}
-
-              {isLocked && (
-                <div className="text-yellow-500 text-xs text-center py-1 bg-yellow-500/10 rounded-lg">
-                  Market locked — betting closed
-                </div>
-              )}
-
-              {!publicKey && !isLocked && (
-                <p className="text-gray-600 text-xs text-center">Connect wallet to bet</p>
-              )}
-
-              {result && (
-                <p className={result.startsWith('Error') ? 'text-red-400 text-xs' : 'text-green-400 text-xs'}>{result}</p>
-              )}
-
-              <div className="text-gray-600 text-xs pt-1 border-t border-gray-800">
-                Total pool: {total.toFixed(0)} TIMER
-              </div>
+              {isLocked && <div className="text-yellow-500 text-xs text-center py-1 bg-yellow-500/10 rounded-lg">Market locked — betting closed</div>}
+              {!publicKey && !isLocked && <p className="text-gray-600 text-xs text-center">Connect wallet to bet</p>}
+              {result && <p className={result.startsWith('Error') ? 'text-red-400 text-xs' : 'text-green-400 text-xs'}>{result}</p>}
+              <div className="text-gray-600 text-xs pt-1 border-t border-gray-800">Total pool: {total.toFixed(0)} TIMER</div>
             </div>
           );
         })}
