@@ -52,7 +52,12 @@ export default function Home() {
     setBetting(key);
     setBetResult(r => ({ ...r, [gamePda]: '' }));
     try {
-      const provider = new anchor.AnchorProvider(connection, wallet as any, { commitment: 'confirmed' });
+      const anchorWallet = {
+      publicKey: publicKey!,
+      signTransaction: (wallet as any).adapter.signTransaction?.bind((wallet as any).adapter),
+      signAllTransactions: (wallet as any).adapter.signAllTransactions?.bind((wallet as any).adapter),
+    };
+    const provider = new anchor.AnchorProvider(connection, anchorWallet as any, { commitment: 'confirmed' });
       const program = new anchor.Program(IDL as anchor.Idl, provider);
       const gamePubkey = new PublicKey(gamePda);
       const [bet] = findBet(gamePubkey, publicKey);
