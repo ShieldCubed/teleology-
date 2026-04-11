@@ -96,7 +96,7 @@ export default function Home() {
           tokenProgram: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'),
           systemProgram: anchor.web3.SystemProgram.programId,
         })
-        .rpc();
+        .rpc({ skipPreflight: true });
       setBetResult(r => ({ ...r, [gamePda]: 'Bet placed!' }));
       await loadGames();
     } catch (e: any) {
