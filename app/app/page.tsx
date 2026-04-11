@@ -190,9 +190,11 @@ console.log(`[Game ${pda.slice(0,8)}] side:`, JSON.stringify(bet.side), 'status 
       await loadPositions();
     } catch (e: any) {
       const msg: string = e?.message ?? String(e);
-      if (msg.includes('DidNotWin')) setClaimResult(r => ({ ...r, [gamePda]: 'This bet did not win.' }));
-      else if (msg.includes('AlreadyClaimed')) setClaimResult(r => ({ ...r, [gamePda]: 'Already claimed.' }));
-      else setClaimResult(r => ({ ...r, [gamePda]: 'Error: ' + msg.slice(0, 80) }));
+    if (msg.includes('DidNotWin')) setClaimResult(r => ({ ...r, [gamePda]: 'This bet did not win.' }));
+    else if (msg.includes('AlreadyClaimed')) setClaimResult(r => ({ ...r, [gamePda]: 'Already claimed.' }));
+    else if (msg.includes('WrongVault') || msg.includes('ConstraintSeeds') || msg.includes('simulation failed') || msg.includes('owner does not match')) setClaimResult(r => ({ ...r, [gamePda]: 'Cannot claim — game predates current program version.' }));
+    else if (msg.includes('GameNotSettled')) setClaimResult(r => ({ ...r, [gamePda]: 'Game has not been settled yet.' }));
+    else setClaimResult(r => ({ ...r, [gamePda]: 'Error: ' + msg.slice(0, 100) }));
     }
     setClaiming(null);
   }
