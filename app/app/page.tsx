@@ -76,7 +76,7 @@ export default function Home() {
         signTransaction: (wallet as any).adapter.signTransaction?.bind((wallet as any).adapter),
         signAllTransactions: (wallet as any).adapter.signAllTransactions?.bind((wallet as any).adapter),
       };
-      const provider = new anchor.AnchorProvider(connection, anchorWallet as any, { commitment: 'confirmed' });
+      const provider = new anchor.AnchorProvider(connection, anchorWallet as any, { commitment: 'confirmed', preflightCommitment: 'confirmed' });
       const program = new anchor.Program(IDL as anchor.Idl, provider);
       const gamePubkey = new PublicKey(gamePda);
       const bet = findBetPda(gamePubkey, publicKey);
@@ -96,7 +96,7 @@ export default function Home() {
           tokenProgram: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'),
           systemProgram: anchor.web3.SystemProgram.programId,
         })
-        .rpc({ skipPreflight: true });
+        .rpc();
       setBetResult(r => ({ ...r, [gamePda]: 'Bet placed!' }));
       await loadGames();
     } catch (e: any) {
