@@ -28,8 +28,10 @@ pub fn handler(ctx: Context<ClaimWinnings>) -> Result<()> {
     bet.claimed = true;
 
     let game_key = ctx.accounts.game.key();
-    let vault_bump = ctx.accounts.game.vault_bump;
-    let seeds: &[&[&[u8]]] = &[&[b"vault", game_key.as_ref(), &[vault_bump]]];
+    let game_bump = ctx.accounts.game.bump;
+    let universe_key = ctx.accounts.game.universe;
+    let game_index = ctx.accounts.game.game_index;
+    let seeds: &[&[&[u8]]] = &[&[b"game", universe_key.as_ref(), &game_index.to_le_bytes(), &[game_bump]]];
 
     token::transfer(
         CpiContext::new_with_signer(
@@ -37,7 +39,7 @@ pub fn handler(ctx: Context<ClaimWinnings>) -> Result<()> {
             Transfer {
                 from: ctx.accounts.vault.to_account_info(),
                 to: ctx.accounts.winner_token_account.to_account_info(),
-                authority: ctx.accounts.vault.to_account_info(),
+                authority: ctx.accounts.game.to_account_info(),
             },
             seeds,
         ),
