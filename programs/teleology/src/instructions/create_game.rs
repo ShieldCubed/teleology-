@@ -1,4 +1,5 @@
 use anchor_lang::prelude::*;
+use anchor_spl::token::{Token, TokenAccount, Mint};
 use crate::error::TeleologyError;
 use crate::state::{Game, GameStatus, GameType, Universe};
 
@@ -29,6 +30,7 @@ pub fn handler(
     game.settle_time = settle_time;
     game.game_index = universe.game_count;
     game.bump = ctx.bumps.game;
+    game.vault_bump = ctx.bumps.vault;
 
     universe.game_count += 1;
 
@@ -60,14 +62,22 @@ pub struct CreateGame<'info> {
     /// CHECK: oracle is just a pubkey, no data needed
     pub oracle: UncheckedAccount<'info>,
 
-    /// CHECK: SPL token mint
-    pub token_mint: UncheckedAccount<'info>,
+    pub token_mint: Account<'info, Mint>,
 
-    /// CHECK: vault token account
-    pub vault: UncheckedAccount<'info>,
+    #[account(
+        init,
+        payer = authority,
+        token::mint = token_mint,
+        token::authority = game,
+        seeds = [b"vault", game.key().as_ref()],
+        bump,
+    )]
+    pub vault: Account<'info, TokenAccount>,
 
     #[account(mut)]
     pub authority: Signer<'info>,
 
+    pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
 }

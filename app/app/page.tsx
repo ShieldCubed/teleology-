@@ -144,7 +144,7 @@ console.log(`[Game ${pda.slice(0,8)}] side:`, JSON.stringify(bet.side), 'status 
           game: gamePubkey,
           tokenMint: new PublicKey(TIMER_MINT),
           bettorTokenAccount,
-          vault: new PublicKey(vaultAddr),
+          vault: PublicKey.findProgramAddressSync([Buffer.from("vault"), gamePubkey.toBuffer()], new PublicKey(PROGRAM_ID))[0],
           bettor: publicKey,
           tokenProgram: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'),
           systemProgram: anchor.web3.SystemProgram.programId,
@@ -181,6 +181,7 @@ console.log(`[Game ${pda.slice(0,8)}] side:`, JSON.stringify(bet.side), 'status 
           vault: new PublicKey(vaultAddr),
           winnerTokenAccount,
           winner: publicKey,
+          bettor: publicKey,
           tokenProgram: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'),
         })
         .rpc();

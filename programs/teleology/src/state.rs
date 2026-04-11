@@ -14,6 +14,7 @@ pub struct GlobalConfig {
     pub protocol_fee_bps: u16,   // basis points
     pub paused: bool,
     pub bump: u8,
+    pub vault_bump: u8,
 }
 
 impl GlobalConfig {
@@ -104,6 +105,7 @@ pub struct Game {
     pub settle_time: i64,       // unix ts — oracle must settle by this
     pub game_index: u32,        // incrementing index within universe
     pub bump: u8,
+    pub vault_bump: u8,
 }
 
 impl Game {
@@ -121,6 +123,7 @@ impl Game {
         + 8    // settle_time
         + 4    // game_index
         + 1    // bump
+        + 1    // vault_bump
         + 64;  // padding
 }
 
