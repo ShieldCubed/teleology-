@@ -73,8 +73,9 @@ export default function Home() {
       const loaded = [];
       for (let i = 0; i < u.gameCount; i++) {
         const gamePda = findGamePda(universePda, i);
-        const g = await (program.account as any).game.fetch(gamePda);
+        const g = await (program.account as any).game.fetch(gamePda);console.log(`[Game ${i}] status:`, JSON.stringify(g.status), 'outcome:', JSON.stringify(g.outcome));
         loaded.push({ game: g, pda: gamePda.toBase58() });
+        if (i === 3) console.log('[Game3] vault:', g.vault.toBase58());
       }
       setGames(loaded);
     } catch (e: any) {
@@ -100,7 +101,8 @@ export default function Home() {
         const betPda = findBetPda(gamePubkey, publicKey);
         try {
           const bet = await (program.account as any).bet.fetch(betPda);
-          const side: 'Yes' | 'No' = bet.side?.Yes !== undefined ? 'Yes' : 'No';
+console.log(`[Game ${pda.slice(0,8)}] side:`, JSON.stringify(bet.side), 'status will be checked in loadGames');
+          const side: 'Yes' | 'No' = bet.side?.yes !== undefined ? 'Yes' : 'No';
           next[pda] = {
             side,
             amount: bet.amount.toNumber() / 1e9,
@@ -156,7 +158,7 @@ export default function Home() {
     setBetting(null);
   }
 
-  async function claimWinnings(gamePda: string) {
+  async function claimWinnings(gamePda: string, vaultAddr: string) {
     if (!publicKey || !wallet) return;
     setClaiming(gamePda);
     setClaimResult(r => ({ ...r, [gamePda]: '' }));
@@ -176,10 +178,9 @@ export default function Home() {
         .accounts({
           game: gamePubkey,
           bet: betPda,
-          vault: new PublicKey(VAULT_ADDRESS),
+          vault: new PublicKey(vaultAddr),
           winnerTokenAccount,
           winner: publicKey,
-          bettor: publicKey,
           tokenProgram: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'),
         })
         .rpc();
@@ -228,8 +229,8 @@ export default function Home() {
           const yesPct = total > 0 ? Math.round((yes / total) * 100) : 50;
           const lockTime = new Date(game.lockTime.toNumber() * 1000);
           const isLocked = new Date() > lockTime;
-          const isSettled = game.status?.Settled !== undefined;
-          const isCancelled = game.status?.Cancelled !== undefined;
+          const isSettled = game.status?.settled !== undefined;
+          const isCancelled = game.status?.cancelled !== undefined;
           const outcome: boolean | null = game.outcome ?? null; // Option<bool>
           const eventId = Buffer.from(game.gameType?.customEvent?.eventId || []).toString('utf8').replace(/\0/g, '');
           const isBetting = betting?.startsWith(pda);
@@ -307,7 +308,7 @@ export default function Home() {
                   {/* Claim button */}
                   {wonBet === true && !pos.claimed && claimResult[pda] !== 'Claimed!' && (
                     <button
-                      onClick={() => claimWinnings(pda)}
+                      onClick={() => claimWinnings(pda, vaultAddr)}
                       disabled={claiming === pda}
                       className={`inline-flex items-center gap-1.5 rounded-full px-3 py-0.5 text-xs font-bold transition-all active:scale-95
                         ${claiming === pda
