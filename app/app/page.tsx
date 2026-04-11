@@ -178,7 +178,7 @@ console.log(`[Game ${pda.slice(0,8)}] side:`, JSON.stringify(bet.side), 'status 
         .accounts({
           game: gamePubkey,
           bet: betPda,
-          vault: new PublicKey(vaultAddr),
+				vault: PublicKey.findProgramAddressSync([Buffer.from("vault"), new PublicKey(gamePda).toBuffer()], new PublicKey(PROGRAM_ID))[0],
           winnerTokenAccount,
           winner: publicKey,
           bettor: publicKey,
