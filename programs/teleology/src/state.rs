@@ -23,7 +23,8 @@ impl GlobalConfig {
         + 32   // treasury
         + 2    // protocol_fee_bps
         + 1    // paused
-        + 1;   // bump
+        + 1   // bump
+        + 1;   // vault_bump
 }
 
 #[account]
@@ -45,7 +46,8 @@ impl Universe {
         + 1    // porosity
         + 8    // porosity_locked_until
         + 4    // game_count
-        + 1;   // bump
+        + 1   // bump
+        + 1;   // vault_bump
 }
 
 #[account]
@@ -61,7 +63,8 @@ impl PorosityConfig {
         + 32   // universe
         + 1    // current_porosity
         + 8    // locked_until
-        + 1;   // bump
+        + 1   // bump
+        + 1;   // vault_bump
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]
@@ -150,5 +153,29 @@ impl Bet {
         + 1    // side
         + 8    // amount
         + 1    // claimed
-        + 1;   // bump
+        + 1   // bump
+        + 1;   // vault_bump
+}
+
+#[account]
+pub struct Grandfather {
+    pub authority: Pubkey,        // upgrade authority (your wallet)
+    pub treasury: Pubkey,         // where spawn fees accumulate (SOL)
+    pub timer_mint: Pubkey,       // TIMER token mint
+    pub spawn_fee: u64,           // TIMER to burn when spawning a child universe
+    pub stake_duration: i64,      // reserved for future time-lock logic
+    pub universe_count: u32,      // total child universes spawned
+    pub bump: u8,
+}
+
+impl Grandfather {
+    pub const LEN: usize = 8      // discriminator
+        + 32   // authority
+        + 32   // treasury
+        + 32   // timer_mint
+        + 8    // spawn_fee
+        + 8    // stake_duration
+        + 4    // universe_count
+        + 1    // bump
+        + 32;  // padding
 }

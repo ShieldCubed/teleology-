@@ -18,6 +18,7 @@ pub fn handler(
     config.protocol_fee_bps = protocol_fee_bps;
     config.paused = false;
     config.bump = ctx.bumps.global_config;
+    config.vault_bump = 0;
 
     Ok(())
 }
@@ -28,7 +29,7 @@ pub struct InitializeGlobal<'info> {
         init,
         payer = authority,
         space = GlobalConfig::LEN,
-        seeds = [b"global-config"],
+        seeds = [b"global-config-v2", authority.key().as_ref()],
         bump,
     )]
     pub global_config: Account<'info, GlobalConfig>,

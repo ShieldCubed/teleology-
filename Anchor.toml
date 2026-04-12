@@ -6,10 +6,10 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-teleology = "YbHTUaJk2tQfX5VUY4iMv2bqd2oDHoS3MaerF6VKvgk"
+teleology = "HpUrEiEnyqKHmhF5daMWygXKjZPPWgtnLMEvi13ZqBPu"
 
 [programs.devnet]
-teleology = "YbHTUaJk2tQfX5VUY4iMv2bqd2oDHoS3MaerF6VKvgk"
+teleology = "HpUrEiEnyqKHmhF5daMWygXKjZPPWgtnLMEvi13ZqBPu"
 
 [provider]
 cluster = "devnet"

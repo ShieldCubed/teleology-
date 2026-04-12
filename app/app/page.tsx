@@ -6,7 +6,7 @@ import * as anchor from '@coral-xyz/anchor';
 import { IDL } from '../lib/idl';
 import { RPC_URL, TIMER_MINT, PROGRAM_ID, VAULT_ADDRESS } from '../lib/constants';
 
-const UNIVERSE_PDA = '87g4cgFaCopAufWwZ8ucyGsyJZCjLJLXrJ7a6q7j3kgq';
+const UNIVERSE_PDA = '2g57URHMNJYu46e7qQxNY4TDgJNxgwbJQA1xcYWzQPQv';
 const UNIVERSE_NAME = 'fsp-alpha';
 
 function findGamePda(universeKey: PublicKey, index: number): PublicKey {

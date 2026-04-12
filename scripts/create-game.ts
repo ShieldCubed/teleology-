@@ -2,60 +2,72 @@ import * as anchor from "@coral-xyz/anchor";
 import { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import * as fs from "fs";
 import * as os from "os";
-import { IDL } from "../app/lib/idl";
-import { RPC_URL, UNIVERSE_NAME, TIMER_MINT, VAULT_ADDRESS, PROGRAM_ID } from "../app/lib/constants";
 
-const UNIVERSE_PDA = "87g4cgFaCopAufWwZ8ucyGsyJZCjLJLXrJ7a6q7j3kgq";
+const RPC_URL = "https://api.devnet.solana.com";
+const PROGRAM_ID = "HpUrEiEnyqKHmhF5daMWygXKjZPPWgtnLMEvi13ZqBPu";
+const UNIVERSE_PDA = "2g57URHMNJYu46e7qQxNY4TDgJNxgwbJQA1xcYWzQPQv";
+const TIMER_MINT = "5vzSVRH5qMbwnP8TKNFKQ6ajN1AWh14Zbvu5ffbbtrXp";
 const ORACLE = "BqK3dgmbWx7itxhm84kcSbcRymSeMTBEc25FeKZV2zAK";
 
 async function main() {
-  const keypairPath = os.homedir() + "/.config/solana/id.json";
-  const raw = JSON.parse(fs.readFileSync(keypairPath, "utf8"));
+  const raw = JSON.parse(fs.readFileSync(os.homedir() + "/.config/solana/id.json", "utf8"));
   const payer = Keypair.fromSecretKey(Uint8Array.from(raw));
   const conn = new Connection(RPC_URL, "confirmed");
   const wallet = new anchor.Wallet(payer);
   const provider = new anchor.AnchorProvider(conn, wallet, { commitment: "confirmed" });
-  const program = new anchor.Program(IDL as anchor.Idl, provider);
+  const idlJson = JSON.parse(fs.readFileSync(`${__dirname}/../target/idl/teleology.json`, "utf8"));
+  const program = new anchor.Program(idlJson, provider);
+  const programId = new PublicKey(PROGRAM_ID);
 
   const universePda = new PublicKey(UNIVERSE_PDA);
   const u = await (program.account as any).universe.fetch(universePda);
   const gameIndex = u.gameCount;
 
-  // Derive game PDA with u32
   const buf = Buffer.alloc(4);
   buf.writeUInt32LE(gameIndex, 0);
   const [gamePda] = PublicKey.findProgramAddressSync(
-    [Buffer.from('game'), universePda.toBuffer(), buf],
-    new PublicKey(PROGRAM_ID)
+    [Buffer.from("game"), universePda.toBuffer(), buf], programId
   );
 
-  // Lock time = 10 minutes AGO, settle = 5 minutes ago
+  // Vault is derived from game PDA
+  const [vaultPda] = PublicKey.findProgramAddressSync(
+    [Buffer.from("vault"), gamePda.toBuffer()], programId
+  );
+
   const now = Math.floor(Date.now() / 1000);
-  const lockTime = now - 10 * 60;
-  const settleTime = now - 5 * 60;
+  const lockTime = now + 300;
+  const settleTime = now + 600;
 
-  const eventIdBytes = Buffer.alloc(32);
-  Buffer.from("sol-price-above-200").copy(eventIdBytes);
+  const symbol = Buffer.alloc(8);
+  Buffer.from("SOL").copy(symbol);
 
-  await program.methods
-    .createGame(
-      { customEvent: { eventId: Array.from(eventIdBytes) } },
-      new anchor.BN(lockTime),
-      new anchor.BN(settleTime)
-    )
+  const gameType = {
+    assetPrice: {
+      assetSymbol: Array.from(symbol),
+      targetPrice: new anchor.BN(200),
+      direction: { above: {} },
+    }
+  };
+
+  const tx = await program.methods
+    .createGame(gameType, new anchor.BN(lockTime), new anchor.BN(settleTime))
     .accounts({
       game: gamePda,
       universe: universePda,
       oracle: new PublicKey(ORACLE),
       tokenMint: new PublicKey(TIMER_MINT),
-      vault: new PublicKey(VAULT_ADDRESS),
+      vault: vaultPda,
       authority: payer.publicKey,
+      tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
       systemProgram: anchor.web3.SystemProgram.programId,
+      rent: anchor.web3.SYSVAR_RENT_PUBKEY,
     })
     .rpc();
 
-  console.log("Game #" + gameIndex + " created with lock time IN THE PAST");
-  console.log("PDA:", gamePda.toBase58());
-  console.log("Can be settled immediately!");
+  console.log("✅ Game #" + gameIndex + " created! Tx:", tx);
+  console.log("Game PDA:", gamePda.toBase58());
+  console.log("Vault PDA:", vaultPda.toBase58());
+  console.log("Lock time:", new Date(lockTime * 1000).toLocaleString());
 }
+
 main().catch(e => { console.error("Error:", e.message); process.exit(1); });

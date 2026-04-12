@@ -7,7 +7,7 @@ use anchor_lang::prelude::*;
 use instructions::*;
 use state::{BetSide, GameType, UniverseType};
 
-declare_id!("YbHTUaJk2tQfX5VUY4iMv2bqd2oDHoS3MaerF6VKvgk");
+declare_id!("HpUrEiEnyqKHmhF5daMWygXKjZPPWgtnLMEvi13ZqBPu");
 
 #[program]
 pub mod teleology {
@@ -18,6 +18,14 @@ pub mod teleology {
         protocol_fee_bps: u16,
     ) -> Result<()> {
         initialize_global::handler(ctx, protocol_fee_bps)
+    }
+
+    pub fn initialize_grandfather(
+        ctx: Context<InitializeGrandfather>,
+        spawn_fee: u64,
+        stake_duration: i64,
+    ) -> Result<()> {
+        initialize_grandfather::handler(ctx, spawn_fee, stake_duration)
     }
 
     pub fn create_universe(

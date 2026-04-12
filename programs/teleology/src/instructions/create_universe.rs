@@ -43,7 +43,7 @@ pub struct CreateUniverse<'info> {
     )]
     pub universe: Account<'info, Universe>,
 
-    #[account(seeds = [b"global-config"], bump = global_config.bump)]
+    #[account(seeds = [b"global-config-v2", authority.key().as_ref()], bump = global_config.bump)]
     pub global_config: Account<'info, GlobalConfig>,
 
     #[account(mut)]
