@@ -5,3 +5,9 @@ export const UNIVERSE_NAME = 'fsp-alpha';
 export const UNIVERSE_AUTHORITY = 'BqK3dgmbWx7itxhm84kcSbcRymSeMTBEc25FeKZV2zAK';
 export const UNIVERSE_PDA = '2g57URHMNJYu46e7qQxNY4TDgJNxgwbJQA1xcYWzQPQv';
 export const GLOBAL_CONFIG_PDA = '3ATYUwkeizeqxbjhiMFNYFps34L7aXUp3VcdfK2pM8Ds';
+
+export const VAULT_ADDRESS = '2Kasabzr99M6v9bSaqmf7znH5KKfs5uT5XacTzbvu23b';
+
+export type SupportedAsset = 'SOL' | 'USDC';
+
+export const SUPPORTED_ASSETS: SupportedAsset[] = ['SOL', 'USDC'];
