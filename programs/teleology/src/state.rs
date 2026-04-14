@@ -1,6 +1,7 @@
 use anchor_lang::prelude::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]
+#[derive(Debug)]
 pub enum UniverseType {
     Financial,    // hedge funds
     MachineTwin,  // drones, robots, vehicles

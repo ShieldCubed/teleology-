@@ -54,11 +54,20 @@ pub mod teleology {
         place_bet::handler(ctx, side, amount)
     }
 
-    pub fn settle_game(ctx: Context<SettleGame>, outcome: bool) -> Result<()> {
-        settle_game::handler(ctx, outcome)
+    pub fn settle_game(ctx: Context<SettleGame>, resolved_price: i64, price_timestamp: i64, oracle_source: u8) -> Result<()> {
+        settle_game::handler(ctx, resolved_price, price_timestamp, oracle_source)
     }
 
     pub fn claim_winnings(ctx: Context<ClaimWinnings>) -> Result<()> {
         claim_winnings::handler(ctx)
+    }
+
+    pub fn spawn_universe(
+        ctx: Context<SpawnUniverse>,
+        universe_type: UniverseType,
+        name: String,
+        initial_porosity: u8,
+    ) -> Result<()> {
+        spawn_universe::handler(ctx, universe_type, name, initial_porosity)
     }
 }

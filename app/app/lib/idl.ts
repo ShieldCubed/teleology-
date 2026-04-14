@@ -1,1 +1,1 @@
-export { default as IDL } from '../../target/idl/teleology.json';
+export { default as IDL } from './teleology.json';

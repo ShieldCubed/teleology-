@@ -12,6 +12,14 @@ pub fn handler(
     let universe = &mut ctx.accounts.universe;
     require!(!matches!(universe.porosity, 0), TeleologyError::ProgramPaused);
 
+    // Authority always allowed; others need porosity >= 50
+    if universe.porosity < 50 {
+        require!(
+            ctx.accounts.authority.key() == universe.authority,
+            TeleologyError::Unauthorized
+        );
+    }
+
     let clock = Clock::get()?;
     require!(lock_time > clock.unix_timestamp, TeleologyError::InvalidTime);
     require!(settle_time > lock_time, TeleologyError::InvalidTime);
@@ -53,10 +61,7 @@ pub struct CreateGame<'info> {
     )]
     pub game: Account<'info, Game>,
 
-    #[account(
-        mut,
-        has_one = authority @ TeleologyError::Unauthorized,
-    )]
+    #[account(mut)]
     pub universe: Account<'info, Universe>,
 
     /// CHECK: oracle is just a pubkey, no data needed

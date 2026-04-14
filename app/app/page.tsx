@@ -4,9 +4,12 @@ import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { Connection, PublicKey } from '@solana/web3.js';
 import * as anchor from '@coral-xyz/anchor';
 import { IDL } from '../lib/idl';
+import { SpawnUniverseModal } from './components/SpawnUniverseModal';
+import { CreateGameModal } from './components/CreateGameModal';
+import { UniverseBrowser } from './components/UniverseBrowser';
 import { RPC_URL, TIMER_MINT, PROGRAM_ID, VAULT_ADDRESS } from '../lib/constants';
 
-const UNIVERSE_PDA = '2g57URHMNJYu46e7qQxNY4TDgJNxgwbJQA1xcYWzQPQv';
+const DEFAULT_UNIVERSE_PDA = '2g57URHMNJYu46e7qQxNY4TDgJNxgwbJQA1xcYWzQPQv';
 const UNIVERSE_NAME = 'fsp-alpha';
 
 function findGamePda(universeKey: PublicKey, index: number): PublicKey {
@@ -38,12 +41,16 @@ export default function Home() {
   const [games, setGames] = useState<any[]>([]);
   const [universe, setUniverse] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [betting, setBetting] = useState<string | null>(null);
+  const [betting, setBetting] = useState<string>('');
   const [betResult, setBetResult] = useState<Record<string, string>>({});
   // Map of gamePda -> { side: 'Yes'|'No', amount: number, claimed: boolean } | null
   const [positions, setPositions] = useState<Record<string, { side: 'Yes' | 'No'; amount: number; claimed: boolean } | null>>({});
-  const [claiming, setClaiming] = useState<string | null>(null);
+  const [claiming, setClaiming] = useState<string>('');
   const [claimResult, setClaimResult] = useState<Record<string, string>>({});
+  const [showSpawnModal, setShowSpawnModal] = useState(false);
+  const [showCreateGameModal, setShowCreateGameModal] = useState(false);
+  const [selectedUniversePda, setSelectedUniversePda] = useState<string>('');
+  const [selectedUniverseName, setSelectedUniverseName] = useState<string>('fsp-alpha');
 
   useEffect(() => { loadGames(); }, []);
 
@@ -56,13 +63,15 @@ export default function Home() {
     }
   }, [publicKey, games.length]);
 
-  async function loadGames() {
+  async function loadGames(pda?: string) {
+    const targetPda = pda ?? selectedUniversePda;
+    if (!targetPda) return;
     setLoading(true);
     try {
       const conn = new Connection(RPC_URL, 'confirmed');
-      const universePda = new PublicKey(UNIVERSE_PDA);
+      const universePda = new PublicKey(targetPda);
       const dummyWallet = {
-        publicKey: new PublicKey(UNIVERSE_PDA),
+        publicKey: new PublicKey(targetPda),
         signTransaction: async (tx: any) => tx,
         signAllTransactions: async (txs: any) => txs,
       };
@@ -200,15 +209,58 @@ console.log(`[Game ${pda.slice(0,8)}] side:`, JSON.stringify(bet.side), 'status 
   }
 
   return (
-    <div className="flex flex-col gap-8">
-      <div>
-        <h1 className="text-4xl font-bold text-white mb-2">MekongDelta</h1>
-        <p className="text-gray-400">Prediction markets inside FSP universes on Solana</p>
+    <div className="flex gap-6">
+      {/* Sidebar */}
+      <div className="w-56 flex-shrink-0 pt-1">
+        <UniverseBrowser
+          selectedPda={selectedUniversePda}
+          onSelect={(pda, name) => {
+            setSelectedUniversePda(pda);
+            setSelectedUniverseName(name);
+            loadGames(pda);
+          }}
+        />
       </div>
+
+      {/* Main content */}
+      <div className="flex-1 flex flex-col gap-8">
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-4xl font-bold text-white mb-2">MekongDelta</h1>
+          <p className="text-gray-400">Prediction markets inside FSP universes on Solana</p>
+        </div>
+        {publicKey && (
+          <button
+            onClick={() => setShowSpawnModal(true)}
+            className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-sm font-semibold rounded-xl transition-colors"
+          >
+            + Spawn Universe
+          </button>
+        )}
+      </div>
+
+      {showSpawnModal && (
+        <SpawnUniverseModal
+          onSpawned={(_pda, _name) => {
+            setShowSpawnModal(false);
+            loadGames();
+          }}
+          onClose={() => setShowSpawnModal(false)}
+        />
+      )}
+      {showCreateGameModal && universe && (
+        <CreateGameModal
+          universePda={selectedUniversePda}
+          universePorosity={universe.porosity}
+          isAuthority={publicKey?.toBase58() === universe.authority?.toBase58()}
+          onCreated={() => { loadGames(); }}
+          onClose={() => setShowCreateGameModal(false)}
+        />
+      )}
 
       {universe && (
         <div className="grid grid-cols-4 gap-4 bg-gray-900 border border-gray-800 rounded-xl p-4">
-          <div><div className="text-gray-500 text-xs mb-1">Universe</div><div className="text-white font-semibold">{UNIVERSE_NAME}</div></div>
+          <div><div className="text-gray-500 text-xs mb-1">Universe</div><div className="text-white font-semibold">{selectedUniverseName}</div></div>
           <div><div className="text-gray-500 text-xs mb-1">Type</div><div className="text-cyan-400 font-semibold">FSP</div></div>
           <div><div className="text-gray-500 text-xs mb-1">Porosity</div><div className="text-purple-400 font-semibold">{universe.porosity}%</div></div>
           <div><div className="text-gray-500 text-xs mb-1">Games</div><div className="text-white font-semibold">{universe.gameCount}</div></div>
@@ -217,9 +269,16 @@ console.log(`[Game ${pda.slice(0,8)}] side:`, JSON.stringify(bet.side), 'status 
 
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold text-white">Games</h2>
-        <button onClick={loadGames} className="text-sm text-gray-500 hover:text-white border border-gray-800 hover:border-gray-600 px-3 py-1 rounded-lg transition-colors">
+        <div className="flex gap-2">
+    {universe && publicKey && (
+      <button onClick={() => setShowCreateGameModal(true)} className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold rounded-lg transition-colors">
+        + Create Game
+      </button>
+    )}
+    <button onClick={loadGames} className="text-sm text-gray-500 hover:text-white border border-gray-800 hover:border-gray-600 px-3 py-1 rounded-lg transition-colors">
           Refresh
         </button>
+      </div>
       </div>
 
       {loading && <div className="text-gray-500 text-center py-16">Loading from devnet...</div>}
@@ -380,6 +439,7 @@ console.log(`[Game ${pda.slice(0,8)}] side:`, JSON.stringify(bet.side), 'status 
             </div>
           );
         })}
+      </div>
       </div>
     </div>
   );

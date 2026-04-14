@@ -17,3 +17,6 @@ pub use initialize::*;
 pub use place_bet::*;
 pub use set_porosity::*;
 pub use settle_game::*;
+
+pub mod spawn_universe;
+pub use spawn_universe::*;

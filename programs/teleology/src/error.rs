@@ -36,4 +36,12 @@ pub enum TeleologyError {
     DidNotWin,
     #[msg("Winnings have already been claimed")]
     AlreadyClaimed,
+    #[msg("Spawn fee mint does not match grandfather timer_mint")]
+    WrongSpawnMint,
+    #[msg("Insufficient TIMER balance to cover spawn fee")]
+    InsufficientSpawnFee,
+    #[msg("Oracle price is stale: timestamp too old")]
+    OracleStale,
+    #[msg("Oracle price is invalid: must be greater than zero")]
+    OracleInvalidPrice,
 }

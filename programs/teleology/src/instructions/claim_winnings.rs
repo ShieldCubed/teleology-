@@ -27,7 +27,7 @@ pub fn handler(ctx: Context<ClaimWinnings>) -> Result<()> {
 
     bet.claimed = true;
 
-    let game_key = ctx.accounts.game.key();
+    let _game_key = ctx.accounts.game.key();
     let game_bump = ctx.accounts.game.bump;
     let universe_key = ctx.accounts.game.universe;
     let game_index = ctx.accounts.game.game_index;
