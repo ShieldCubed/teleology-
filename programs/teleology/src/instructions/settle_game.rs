@@ -80,8 +80,6 @@ pub struct SettleGame<'info> {
     pub game: Account<'info, Game>,
 
     #[account(
-        seeds = [b"universe", universe.authority.as_ref(), universe.name.as_ref()],
-        bump = universe.bump,
         constraint = universe.key() == game.universe @ TeleologyError::Unauthorized,
     )]
     pub universe: Account<'info, Universe>,

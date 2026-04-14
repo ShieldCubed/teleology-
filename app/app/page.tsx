@@ -6,6 +6,7 @@ import * as anchor from '@coral-xyz/anchor';
 import { IDL } from '../lib/idl';
 import { SpawnUniverseModal } from './components/SpawnUniverseModal';
 import { CreateGameModal } from './components/CreateGameModal';
+import { CreateFSPModal } from './components/CreateFSPModal';
 import { UniverseBrowser } from './components/UniverseBrowser';
 import { RPC_URL, TIMER_MINT, PROGRAM_ID, VAULT_ADDRESS } from '../lib/constants';
 
@@ -49,6 +50,7 @@ export default function Home() {
   const [claimResult, setClaimResult] = useState<Record<string, string>>({});
   const [showSpawnModal, setShowSpawnModal] = useState(false);
   const [showCreateGameModal, setShowCreateGameModal] = useState(false);
+  const [showFSPModal, setShowFSPModal] = useState(false);
   const [selectedUniversePda, setSelectedUniversePda] = useState<string>('');
   const [selectedUniverseName, setSelectedUniverseName] = useState<string>('fsp-alpha');
 
@@ -230,12 +232,20 @@ console.log(`[Game ${pda.slice(0,8)}] side:`, JSON.stringify(bet.side), 'status 
           <p className="text-gray-400">Prediction markets inside FSP universes on Solana</p>
         </div>
         {publicKey && (
-          <button
-            onClick={() => setShowSpawnModal(true)}
-            className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-sm font-semibold rounded-xl transition-colors"
-          >
-            + Spawn Universe
-          </button>
+          <>
+            <button
+              onClick={() => setShowSpawnModal(true)}
+              className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-sm font-semibold rounded-xl transition-colors"
+            >
+              + Spawn Universe
+            </button>
+            <button
+              onClick={() => setShowFSPModal(true)}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-xl transition-colors mt-2"
+            >
+              🚀 Launch FSP Fund
+            </button>
+          </>
         )}
       </div>
 
@@ -246,6 +256,12 @@ console.log(`[Game ${pda.slice(0,8)}] side:`, JSON.stringify(bet.side), 'status 
             loadGames();
           }}
           onClose={() => setShowSpawnModal(false)}
+        />
+      )}
+      {showFSPModal && (
+        <CreateFSPModal
+          onSpawned={() => { setShowFSPModal(false); }}
+          onClose={() => setShowFSPModal(false)}
         />
       )}
       {showCreateGameModal && universe && (
