@@ -166,7 +166,7 @@ console.log(`[Game ${pda.slice(0,8)}] side:`, JSON.stringify(bet.side), 'status 
     } catch (e: any) {
       setBetResult(r => ({ ...r, [gamePda]: 'Error: ' + (e.message || '').slice(0, 100) }));
     }
-    setBetting(null);
+    setBetting('');
   }
 
   async function claimWinnings(gamePda: string, vaultAddr: string) {
@@ -207,7 +207,7 @@ console.log(`[Game ${pda.slice(0,8)}] side:`, JSON.stringify(bet.side), 'status 
     else if (msg.includes('GameNotSettled')) setClaimResult(r => ({ ...r, [gamePda]: 'Game has not been settled yet.' }));
     else setClaimResult(r => ({ ...r, [gamePda]: 'Error: ' + msg.slice(0, 100) }));
     }
-    setClaiming(null);
+    setClaiming('');
   }
 
   return (

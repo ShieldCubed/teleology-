@@ -8,6 +8,8 @@ export const GLOBAL_CONFIG_PDA = '3ATYUwkeizeqxbjhiMFNYFps34L7aXUp3VcdfK2pM8Ds';
 
 export const VAULT_ADDRESS = '2Kasabzr99M6v9bSaqmf7znH5KKfs5uT5XacTzbvu23b';
 
-export type SupportedAsset = 'SOL' | 'USDC';
+export type SupportedAsset = 'BTC/USD' | 'SOL/USD';
 
-export const SUPPORTED_ASSETS: SupportedAsset[] = ['SOL', 'USDC'];
+export const SUPPORTED_ASSETS: SupportedAsset[] = ['BTC/USD', 'SOL/USD'];
+
+export const ORACLE_SOURCE = { PYTH: 0, SB: 1 };

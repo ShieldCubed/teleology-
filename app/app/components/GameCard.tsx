@@ -106,7 +106,7 @@ export function GameCard({ game, gamePda, index, vaultAddress }: GameCardProps) 
       <div className="flex items-center justify-between">
         {getAssetSymbol(game) && (
         <div className="mb-2">
-          <OraclePriceBadge asset={getAssetSymbol(game)} strikePrice={getStrikePrice(game)} />
+          <OraclePriceBadge asset={getAssetSymbol(game)!} strikePrice={getStrikePrice(game)} />
         </div>
       )}
       <h3 className="text-white font-semibold text-sm">{getGameTitle()}</h3>
