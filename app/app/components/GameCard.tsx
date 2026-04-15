@@ -40,6 +40,20 @@ export function GameCard({ game, gamePda, index, vaultAddress }: GameCardProps) 
     }
     return 'Prediction Market';
   }
+  function getAssetSymbol(game: any): SupportedAsset | null {
+    const gt = game.gameType;
+    if (gt?.assetPrice) {
+      const sym = Buffer.from(gt.assetPrice.assetSymbol).toString('utf8').replace(/\0/g, '').trim();
+      if (SUPPORTED_ASSETS.includes(sym as SupportedAsset)) return sym as SupportedAsset;
+    }
+    return null;
+  }
+
+  function getStrikePrice(game: any): number | undefined {
+    const gt = game.gameType;
+    if (gt?.assetPrice) return gt.assetPrice.targetPrice.toNumber() / 1e9;
+    return undefined;
+  }
 
   async function placeBet(side: 'yes' | 'no') {
     if (!wallet || !publicKey) return;
